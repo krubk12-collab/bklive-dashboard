@@ -1065,11 +1065,9 @@ async function lfReturn(record_id) {
   const btn   = document.querySelector(`[onclick="lfReturn('${record_id}')"]`);
   if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
   try {
-    const r = await fetch(LF_API, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'updateLFStatus', teacher_id: tid, record_id, status: 'returned', owner_name: owner })
-    });
+    // ใช้ GET (POST จากหน้า external โดน GAS redirect→GET ทำให้ doPost ไม่ถูกเรียก)
+    const qs = new URLSearchParams({ action: 'updateLFStatus', teacher_id: tid, record_id, status: 'returned', owner_name: owner }).toString();
+    const r = await fetch(LF_API + '?' + qs);
     const d = await r.json();
     if (d.success) {
       const rec = _lfAll.find(x => x.record_id === record_id);
