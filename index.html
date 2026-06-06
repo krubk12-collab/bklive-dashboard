@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — ระบบสารสนเทศ โรงเรียนชุมชนวัดบางโค</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d2e;
+    --surface2: #242740;
+    --border: #2e3255;
+    --accent: #6c63ff;
+    --accent2: #00c6a7;
+    --accent3: #f59e0b;
+    --accent4: #ef4444;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --hub: #f59e0b;
+    --active: #22c55e;
+    --pending: #f59e0b;
+    --info: #3b82f6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', 'Noto Sans Thai', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 24px;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    text-align: center;
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .header .school { color: var(--muted); font-size: 12px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; }
+  .header h1 { font-size: 22px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+  .header .sub { color: var(--muted); font-size: 13px; }
+  .header .meta { margin-top: 12px; display: flex; justify-content: center; gap: 24px; }
+  .header .meta span { background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 3px 14px; font-size: 12px; color: var(--muted); }
+  .header .meta b { color: var(--text); }
+  .loading-bar { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; color: var(--muted); font-size: 13px; text-align: center; }
+  .skeleton { background: linear-gradient(90deg, var(--surface2) 25%, var(--surface) 50%, var(--surface2) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 8px; height: 120px; }
+  @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+  .updated-tag { font-size: 11px; color: var(--muted); text-align: right; margin-bottom: 8px; }
+
+  /* ── SECTION TITLE ── */
+  .section-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 32px 0 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* ── HUB CARD ── */
+  .hub-card {
+    background: linear-gradient(135deg, #1a1d2e 0%, #1e2240 100%);
+    border: 1.5px solid var(--hub);
+    border-radius: 16px;
+    padding: 22px 26px;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hub-card::before {
+    content: 'HUB';
+    position: absolute;
+    top: 14px;
+    right: 18px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--hub);
+    background: rgba(245,158,11,0.12);
+    padding: 2px 10px;
+    border-radius: 20px;
+    border: 1px solid rgba(245,158,11,0.3);
+  }
+  .hub-card .hub-title { font-size: 17px; font-weight: 700; color: var(--hub); margin-bottom: 4px; }
+  .hub-card .hub-desc { color: var(--muted); font-size: 13px; margin-bottom: 16px; }
+  .hub-sheets { display: flex; gap: 12px; flex-wrap: wrap; }
+  .sheet-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    flex: 1;
+    min-width: 220px;
+  }
+  .sheet-box .sheet-name { font-weight: 700; font-size: 13px; margin-bottom: 6px; }
+  .sheet-box.master .sheet-name { color: #f59e0b; }
+  .sheet-box.year .sheet-name { color: #6c63ff; }
+  .sheet-box .sheet-tabs { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
+  .tab-pill {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1px 8px;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .hub-arrows { text-align: center; color: var(--muted); font-size: 20px; margin: 12px 0 4px; }
+
+  /* ── APP GRID ── */
+  .app-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+  }
+
+  /* ── APP CARD ── */
+  .app-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: border-color 0.2s, transform 0.15s;
+    position: relative;
+  }
+  .app-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .app-card.has-issue { border-color: rgba(245,158,11,0.4); }
+
+  .card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+  .card-icon { font-size: 28px; line-height: 1; }
+  .card-title-wrap { flex: 1; }
+  .card-title { font-size: 15px; font-weight: 700; color: var(--text); }
+  .card-subtitle { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .status-badge {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 2px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+  .status-active { background: rgba(34,197,94,0.15); color: #22c55e; border: 1px solid rgba(34,197,94,0.3); }
+  .status-pending { background: rgba(245,158,11,0.15); color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); }
+  .status-wip { background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
+
+  .card-desc { font-size: 13px; color: var(--muted); }
+
+  /* ── LINKS ROW ── */
+  .links-row { display: flex; flex-wrap: wrap; gap: 7px; }
+  .link-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: opacity 0.15s;
+    cursor: pointer;
+  }
+  .link-chip:hover { opacity: 0.8; }
+  .link-site { background: rgba(108,99,255,0.15); color: #a89cff; border: 1px solid rgba(108,99,255,0.3); }
+  .link-sheet { background: rgba(0,198,167,0.12); color: #00c6a7; border: 1px solid rgba(0,198,167,0.3); }
+  .link-drive { background: rgba(251,191,36,0.12); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
+  .link-local { background: rgba(148,163,184,0.1); color: var(--muted); border: 1px solid var(--border); }
+  .link-chip .icon { font-size: 12px; }
+
+  /* ── FILES LIST ── */
+  .files-list { display: flex; flex-wrap: wrap; gap: 5px; }
+  .file-tag {
+    font-size: 11px;
+    color: var(--muted);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 1px 8px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+  }
+  .file-tag.html { color: #f97316; border-color: rgba(249,115,22,0.2); }
+  .file-tag.gs { color: #4ade80; border-color: rgba(74,222,128,0.2); }
+  .file-tag.py { color: #60a5fa; border-color: rgba(96,165,250,0.2); }
+  .file-tag.bat { color: #a78bfa; border-color: rgba(167,139,250,0.2); }
+  .file-tag.json { color: #fb923c; border-color: rgba(251,146,60,0.2); }
+  .file-tag.xlsx { color: #34d399; border-color: rgba(52,211,153,0.2); }
+
+  /* ── CONNECTIONS ── */
+  .conn-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .conn-label { font-size: 11px; color: var(--muted); }
+  .conn-tag {
+    font-size: 11px;
+    padding: 1px 9px;
+    border-radius: 6px;
+    background: rgba(108,99,255,0.1);
+    color: #a89cff;
+    border: 1px solid rgba(108,99,255,0.2);
+  }
+  .conn-tag.data-pull { background: rgba(0,198,167,0.1); color: #00c6a7; border-color: rgba(0,198,167,0.2); }
+  .conn-tag.data-store { background: rgba(245,158,11,0.1); color: #f59e0b; border-color: rgba(245,158,11,0.2); }
+
+  /* ── ISSUE BOX ── */
+  .issue-box {
+    background: rgba(245,158,11,0.07);
+    border: 1px solid rgba(245,158,11,0.25);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12px;
+    color: #fbbf24;
+    display: flex;
+    gap: 6px;
+    align-items: flex-start;
+  }
+  .issue-box .icon { margin-top: 1px; flex-shrink: 0; }
+
+  /* ── CONNECTION DIAGRAM ── */
+  .diagram-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    overflow-x: auto;
+  }
+  .diagram {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    min-width: 560px;
+  }
+  .diag-row { display: flex; align-items: center; justify-content: center; gap: 0; width: 100%; }
+  .diag-row.center { justify-content: center; }
+
+  .diag-node {
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 16px;
+    text-align: center;
+    min-width: 120px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .diag-node.hub { border-color: var(--hub); color: var(--hub); background: rgba(245,158,11,0.07); min-width: 150px; }
+  .diag-node.db { border-color: #6c63ff; color: #a89cff; background: rgba(108,99,255,0.07); }
+  .diag-node.app { border-color: var(--border); color: var(--text); }
+  .diag-node.ext { border-color: #22c55e; color: #4ade80; background: rgba(34,197,94,0.07); }
+  .diag-node .node-label { font-size: 10px; color: var(--muted); font-weight: 400; margin-top: 2px; }
+
+  .diag-line-v { width: 2px; height: 28px; background: var(--border); margin: 0 auto; }
+  .diag-line-h { height: 2px; flex: 1; background: var(--border); max-width: 40px; }
+  .diag-branch {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+    position: relative;
+  }
+  .diag-branch-item { display: flex; flex-direction: column; align-items: center; flex: 1; max-width: 140px; }
+  .diag-branch-item .diag-line-v { height: 20px; }
+
+  .diag-top-line {
+    display: flex;
+    width: 100%;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 0;
+    position: relative;
+  }
+  .diag-hbar {
+    height: 2px;
+    background: var(--border);
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  /* ── TODO LIST ── */
+  .todo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+  .todo-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .todo-card .todo-title { font-weight: 700; font-size: 13px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .todo-item { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; color: var(--muted); padding: 5px 0; border-bottom: 1px solid var(--border); }
+  .todo-item:last-child { border-bottom: none; }
+  .todo-item .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border); border: 1.5px solid var(--muted); margin-top: 5px; flex-shrink: 0; }
+  .todo-item.high .dot { background: var(--accent4); border-color: var(--accent4); }
+  .todo-item.med .dot { background: var(--pending); border-color: var(--pending); }
+  .todo-item.low .dot { background: var(--info); border-color: var(--info); }
+
+  /* ── QUICK REF TABLE ── */
+  .ref-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .ref-table th { background: var(--surface2); color: var(--muted); padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border); font-weight: 600; font-size: 11px; letter-spacing: 0.5px; }
+  .ref-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .ref-table tr:last-child td { border-bottom: none; }
+  .ref-table tr:hover td { background: var(--surface2); }
+  .ref-table .app-name { font-weight: 600; color: var(--text); }
+  .ref-table a { color: #6c9eff; text-decoration: none; }
+  .ref-table a:hover { text-decoration: underline; }
+  .ref-table .sheet-id { font-family: monospace; font-size: 10px; color: var(--muted); }
+
+  /* ── FOOTER ── */
+  .footer { text-align: center; margin-top: 40px; color: var(--muted); font-size: 11px; padding-top: 20px; border-top: 1px solid var(--border); }
+
+  /* ── DIVIDER ── */
+  .divider { height: 1px; background: var(--border); margin: 8px 0; }
+
+  /* ── MANAGEMENT PANEL ── */
+  .mgmt-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px 22px; display: flex; flex-direction: column; gap: 14px; }
+  .mgmt-auth-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .mgmt-input { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; color: var(--text); font-family: inherit; font-size: 13px; width: 200px; outline: none; transition: border-color 0.2s; }
+  .mgmt-input:focus { border-color: var(--accent); }
+  .mgmt-btn { background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 8px 18px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: opacity 0.15s; }
+  .mgmt-btn:hover { opacity: 0.85; }
+  .filter-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+  .filter-tab { padding: 5px 14px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+  .filter-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .lf-stats { display: flex; gap: 10px; flex-wrap: wrap; }
+  .lf-stat { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 6px 14px; font-size: 12px; color: var(--muted); }
+  .lf-stat b { color: var(--text); }
+  .lf-records { display: flex; flex-direction: column; gap: 8px; max-height: 480px; overflow-y: auto; padding-right: 4px; }
+  .lf-record { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; transition: border-color 0.15s; }
+  .lf-record:hover { border-color: var(--accent); }
+  .lf-record.returned { opacity: 0.55; }
+  .lf-rec-id { font-size: 10px; color: var(--muted); font-family: monospace; margin-bottom: 3px; }
+  .lf-rec-name { font-weight: 700; font-size: 13px; color: var(--text); }
+  .lf-rec-cls { font-size: 11px; color: var(--muted); background: var(--surface); padding: 1px 7px; border-radius: 4px; margin-left: 5px; }
+  .lf-rec-item { font-size: 12px; color: var(--accent2); margin: 3px 0; }
+  .lf-rec-date { font-size: 11px; color: var(--muted); }
+  .lf-status-col { display: flex; flex-direction: column; align-items: flex-end; gap: 7px; flex-shrink: 0; min-width: 110px; }
+  .lf-badge { font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 600; white-space: nowrap; }
+  .lf-badge.keeping { background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
+  .lf-badge.returned { background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.3); }
+  .ret-form { display: flex; flex-direction: column; gap: 5px; align-items: flex-end; }
+  .ret-input { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 5px 9px; color: var(--text); font-family: inherit; font-size: 11px; width: 108px; outline: none; }
+  .ret-input:focus { border-color: var(--accent2); }
+  .ret-btn { background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.3); border-radius: 6px; padding: 4px 12px; font-size: 11px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background 0.15s; white-space: nowrap; }
+  .ret-btn:hover { background: rgba(34,197,94,0.28); }
+  .lf-owner-tag { font-size: 11px; color: var(--muted); text-align: right; }
+  .lf-msg { text-align: center; padding: 28px 16px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<div class="header">
+  <div class="school">โรงเรียนชุมชนวัดบางโค · สพป.นนทบุรี เขต 2</div>
+  <h1>🏫 Dashboard ระบบสารสนเทศโรงเรียน</h1>
+  <div class="sub">ภาพรวมเว็บแอปพลิเคชัน ความเชื่อมโยง และสถานะทั้งหมด</div>
+  <div class="meta" id="header-stats">
+    <span>เว็บแอป <b id="stat-total">—</b> ระบบ</span>
+    <span>ใช้งานได้ <b id="stat-active">—</b></span>
+    <span>งานค้าง <b id="stat-todo">—</b> รายการ</span>
+    <span id="stat-updated" style="font-size:11px;">⏳ กำลังโหลด...</span>
+  </div>
+</div>
+
+<!-- ── DIAGRAM ── -->
+<div class="section-title">แผนผังความเชื่อมโยงระบบ</div>
+<div class="diagram-wrap">
+  <div class="diagram">
+
+    <!-- External Sources -->
+    <div class="diag-row">
+      <div class="diag-node ext">
+        <div>🌐 gpf.or.th</div>
+        <div class="node-label">NAV กบข. (scraper)</div>
+      </div>
+      <div style="width:60px;height:2px;background:var(--border);"></div>
+      <div class="diag-node app">
+        <div>📊 GPF Dashboard</div>
+        <div class="node-label">bk.nonedu2.go.th/gpf</div>
+      </div>
+      <div style="width:60px;height:2px;background:var(--border);"></div>
+      <div class="diag-node ext">
+        <div>🟢 Google Sheets</div>
+        <div class="node-label">ราคาหุ้น + NAV</div>
+      </div>
+    </div>
+
+    <div style="height:24px;"></div>
+    <div style="width:2px;height:24px;background:var(--border);margin:0 auto;"></div>
+
+    <!-- Central Hub -->
+    <div class="diag-row center">
+      <div class="diag-node hub" style="min-width:240px;padding:14px 24px;">
+        <div style="font-size:15px;">🗄️ ฐานข้อมูลโรงเรียน (HUB)</div>
+        <div class="node-label" style="margin-top:4px;">MASTER + 2569 · bk2</div>
+      </div>
+    </div>
+
+    <div style="width:2px;height:24px;background:var(--border);margin:0 auto;"></div>
+
+    <!-- Branch line: แอปที่ดึงข้อมูลจาก HUB -->
+    <div style="display:flex;width:100%;max-width:1000px;margin:0 auto;align-items:flex-start;justify-content:space-between;gap:6px;flex-wrap:wrap;">
+      <div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:90px;">
+        <div style="width:2px;height:20px;background:var(--border);"></div>
+        <div class="diag-node app" style="width:100%;max-width:120px;text-align:center;"><div>📚 ห้องสมุด</div><div class="node-label">bkl</div></div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:90px;">
+        <div style="width:2px;height:20px;background:var(--border);"></div>
+        <div class="diag-node app" style="width:100%;max-width:120px;text-align:center;"><div>📋 Collect</div><div class="node-label">testbk ⚠️</div></div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:90px;">
+        <div style="width:2px;height:20px;background:var(--border);"></div>
+        <div class="diag-node app" style="width:100%;max-width:120px;text-align:center;"><div>🔍 นิเทศ</div><div class="node-label">bklive</div></div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:90px;">
+        <div style="width:2px;height:20px;background:var(--border);"></div>
+        <div class="diag-node app" style="width:100%;max-width:120px;text-align:center;"><div>📅 ตารางสอน</div><div class="node-label">bklive</div></div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:90px;">
+        <div style="width:2px;height:20px;background:var(--border);"></div>
+        <div class="diag-node app" style="width:100%;max-width:120px;text-align:center;"><div>🗳️ เลือกตั้ง</div><div class="node-label">election</div></div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:90px;">
+        <div style="width:2px;height:20px;background:var(--border);"></div>
+        <div class="diag-node app" style="width:100%;max-width:120px;text-align:center;border-color:#6c63ff;color:#a89cff;"><div>👤 ข้อมูลนักเรียน</div><div class="node-label">student_profile</div></div>
+      </div>
+    </div>
+
+    <!-- found ป้อน "ความดี" เข้าระบบข้อมูลนักเรียน -->
+    <div style="height:20px;"></div>
+    <div class="diag-row center" style="gap:0;flex-wrap:wrap;">
+      <div class="diag-node ext" style="min-width:120px;"><div>🔎 บันทึกของหาย</div><div class="node-label">found</div></div>
+      <div style="width:90px;height:2px;background:var(--border);position:relative;">
+        <span style="position:absolute;top:-9px;left:50%;transform:translateX(-50%);font-size:10px;color:#fbbf24;white-space:nowrap;">⭐ เก็บของส่งคืน</span>
+      </div>
+      <div class="diag-node app" style="min-width:130px;border-color:#6c63ff;color:#a89cff;"><div>👤 แท็บความดี</div><div class="node-label">student_profile</div></div>
+    </div>
+
+    <div style="height:16px;"></div>
+    <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;font-size:11px;color:var(--muted);">
+      <span style="display:flex;align-items:center;gap:5px;"><span style="width:24px;height:2px;background:#f59e0b;display:inline-block;"></span> HUB เป็นแหล่งข้อมูลกลาง</span>
+      <span style="display:flex;align-items:center;gap:5px;"><span style="width:24px;height:2px;background:var(--border);display:inline-block;"></span> เชื่อมต่อ / ดึงข้อมูล</span>
+      <span style="display:flex;align-items:center;gap:5px;"><span style="background:rgba(245,158,11,0.2);border:1px solid rgba(245,158,11,0.4);border-radius:4px;padding:0 6px;font-size:10px;">⚠️</span> มีงานค้าง</span>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── HUB CARD ── -->
+<div class="section-title">ระบบแกนกลาง (HUB)</div>
+<div class="hub-card">
+  <div class="hub-title">🗄️ ระบบฐานข้อมูลโรงเรียน</div>
+  <div class="hub-desc">แหล่งข้อมูลกลางของโรงเรียนทั้งหมด — นักเรียน ครู ห้องเรียน วิชา · เว็บแอปอื่นทุกตัวดึงข้อมูลจากนี่</div>
+  <div class="hub-sheets">
+    <div class="sheet-box master">
+      <div class="sheet-name">📗 MASTER — ข้อมูลถาวร</div>
+      <div class="sheet-tabs">
+        <span class="tab-pill">Students</span>
+        <span class="tab-pill">Parents</span>
+        <span class="tab-pill">Teachers</span>
+        <span class="tab-pill">Subjects</span>
+        <span class="tab-pill">Classes (22 ห้อง)</span>
+      </div>
+      <a class="link-chip link-sheet" href="https://docs.google.com/spreadsheets/d/16usk65fYdcUmHLhzEIQmQVYY8A_IW-UFgY7kPis5pPo/edit" target="_blank">
+        <span class="icon">📊</span> เปิด Sheet
+      </a>
+    </div>
+    <div class="sheet-box year">
+      <div class="sheet-name">📘 2569 — ข้อมูลปีการศึกษา</div>
+      <div class="sheet-tabs">
+        <span class="tab-pill">Enrollment</span>
+        <span class="tab-pill">Schedule</span>
+        <span class="tab-pill" style="color:#ef4444;border-color:rgba(239,68,68,0.3)">DailyAttendance ⭐</span>
+        <span class="tab-pill">Scores</span>
+        <span class="tab-pill">Attributes</span>
+        <span class="tab-pill">Activities</span>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <a class="link-chip link-sheet" href="https://docs.google.com/spreadsheets/d/14MamZ_Uy4hFRweJRTL_bW8PMEntEk_q0srmPQD5bU78/edit" target="_blank">
+          <span class="icon">📊</span> เปิด Sheet
+        </a>
+        <a class="link-chip link-site" href="https://sites.google.com/nonedu2.go.th/bk2/" target="_blank">
+          <span class="icon">🌐</span> เปิดเว็บ
+        </a>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:14px;">
+    <span class="file-tag html">index.html</span>
+    <span class="file-tag xlsx">MASTER - ข้อมูลถาวร.xlsx</span>
+    <span class="file-tag xlsx">2569 - ข้อมูลปีการศึกษา.xlsx</span>
+    <span class="file-tag gs">sync_attendance_to_sheet.gs</span>
+    <span class="file-tag html">คู่มือ-ระบบเช็คชื่อ.html</span>
+    <span style="font-size:11px;color:var(--muted);margin-left:6px;">📂 files\database\</span>
+  </div>
+</div>
+
+<!-- ── APP CARDS ── -->
+<div class="section-title" style="display:flex;justify-content:space-between;align-items:center;">
+  <span>เว็บแอปพลิเคชัน</span>
+  <button onclick="loadDashData()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:4px 12px;color:var(--muted);font-size:11px;cursor:pointer;font-family:inherit;">🔄 รีเฟรช</button>
+</div>
+<div class="updated-tag" id="updated-tag"></div>
+<div class="app-grid" id="app-grid">
+  <div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>
+</div>
+
+<!-- HIDDEN static app grid (backup / reference) -->
+<div style="display:none" id="static-app-grid">
+
+  <!-- GPF Dashboard -->
+  <div class="app-card">
+    <div class="card-header">
+      <div class="card-icon">📊</div>
+      <div class="card-title-wrap">
+        <div class="card-title">GPF Dashboard</div>
+        <div class="card-subtitle">ราคาหน่วยลงทุน กบข.</div>
+      </div>
+      <span class="status-badge status-active">ใช้งานอยู่</span>
+    </div>
+    <div class="card-desc">ดึง NAV กบข. อัตโนมัติทุกวันธรรมดา 11:30น. แสดง dashboard ราคาหุ้น 4 แผน พร้อมประมาณการ NAV จาก GOOGLEFINANCE</div>
+    <div class="links-row">
+      <a class="link-chip link-sheet" href="https://docs.google.com/spreadsheets/d/1tIGOFFP9Ef8x2RJ4hdLBHPyB2lRW4-H6mtXZNwc9HfM/edit" target="_blank">
+        <span class="icon">📊</span> Sheet: NAV + ราคาหุ้น
+      </a>
+    </div>
+    <div class="files-list">
+      <span class="file-tag py">gpf_scraper.py</span>
+      <span class="file-tag html">gpf_dashboard.html</span>
+      <span class="file-tag py">gpf_server.py</span>
+      <span class="file-tag gs">gpf_gas_proxy.js</span>
+      <span class="file-tag bat">gpf_start.bat</span>
+      <span class="file-tag json">credentials.json 🔒</span>
+      <span class="file-tag json">gpf_token.json 🔒</span>
+    </div>
+    <div class="conn-row">
+      <span class="conn-label">ดึงข้อมูลจาก:</span>
+      <span class="conn-tag data-pull">🌐 gpf.or.th</span>
+      <span class="conn-tag data-pull">📊 Google Sheets</span>
+    </div>
+    <div class="issue-box">
+      <span class="icon">⚠️</span>
+      <span>Task Scheduler: ถ้าย้ายจาก Desktop แล้ว ต้องอัปเดต path ใน Task Scheduler ด้วย</span>
+    </div>
+    <div style="font-size:11px;color:var(--muted);">📂 files\gpf\</div>
+  </div>
+
+  <!-- Collect System -->
+  <div class="app-card has-issue">
+    <div class="card-header">
+      <div class="card-icon">📋</div>
+      <div class="card-title-wrap">
+        <div class="card-title">Collect System</div>
+        <div class="card-subtitle">ระบบเก็บข้อมูลหลากหลาย</div>
+      </div>
+      <span class="status-badge status-active">ใช้งานอยู่</span>
+    </div>
+    <div class="card-desc">ระบบเก็บข้อมูลอเนกประสงค์ 5 mode — form, teacher_note, teacher_roll, group_assign, survey รองรับข้อมูลหลายรูปแบบ</div>
+    <div class="links-row">
+      <a class="link-chip link-site" href="https://sites.google.com/nonedu2.go.th/testbk/" target="_blank">
+        <span class="icon">🌐</span> เปิดเว็บ
+      </a>
+      <a class="link-chip link-sheet" href="https://docs.google.com/spreadsheets/d/14MamZ_Uy4hFRweJRTL_bW8PMEntEk_q0srmPQD5bU78/edit" target="_blank">
+        <span class="icon">📊</span> Sheet: 2569 (ชั่วคราว)
+      </a>
+    </div>
+    <div class="files-list">
+      <span class="file-tag html">collect.html</span>
+      <span class="file-tag gs">code.gs</span>
+      <span class="file-tag html">คู่มือ-ระบบกรอกข้อมูล.html</span>
+      <span class="file-tag html">ดึงชื่อครู.html</span>
+      <span class="file-tag html">สำรวจ.html</span>
+    </div>
+    <div class="conn-row">
+      <span class="conn-label">เก็บข้อมูลที่:</span>
+      <span class="conn-tag data-store">📘 Sheet 2569 (ต้องแยกออก)</span>
+    </div>
+    <div class="issue-box">
+      <span class="icon">⚠️</span>
+      <span>ข้อมูลยังฝากอยู่ในชีต 2569 ร่วมกับระบบฐานข้อมูล — ควรแยกชีตของตัวเองโดยเร็ว</span>
+    </div>
+    <div style="font-size:11px;color:var(--muted);">📂 files\collect\</div>
+  </div>
+
+  <!-- Library -->
+  <div class="app-card">
+    <div class="card-header">
+      <div class="card-icon">📚</div>
+      <div class="card-title-wrap">
+        <div class="card-title">ระบบห้องสมุด</div>
+        <div class="card-subtitle">ยืม-คืน + ภาพรวม</div>
+      </div>
+      <span class="status-badge status-active">ใช้งานอยู่</span>
+    </div>
+    <div class="card-desc">ระบบห้องสมุดโรงเรียน แสดงภาพรวม + ระบบเข้าใช้งาน/ยืม-คืนหนังสือ พร้อม GAS backend v3</div>
+    <div class="links-row">
+      <a class="link-chip link-site" href="https://sites.google.com/nonedu2.go.th/bkl" target="_blank">
+        <span class="icon">🌐</span> เปิดเว็บ
+      </a>
+      <a class="link-chip link-sheet" href="https://docs.google.com/spreadsheets/d/1-3gHc7zNeVp7jF-5URpYtwgJjkQlrRmyAujS4nhYgd0/edit" target="_blank">
+        <span class="icon">📊</span> เปิด Sheet
+      </a>
+      <a class="link-chip link-drive" href="https://drive.google.com/drive/folders/1AjrfFLXmKU9lkmA9eeXEDITauwCudXZE" target="_blank">
+        <span class="icon">📁</span> Drive Folder
+      </a>
+    </div>
+    <div class="files-list">
+      <span class="file-tag html">หน้าแสดงภาพรวมห้องสมุด.html</span>
+      <span class="file-tag html">หน้าเข้าใช้ห้องสมุด.html</span>
+      <span class="file-tag gs">library_code_v3.gs</span>
+    </div>
+    <div class="conn-row">
+      <span class="conn-label">อนาคต:</span>
+      <span class="conn-tag">ควรดึง Students/Teachers จาก MASTER</span>
+    </div>
+    <div style="font-size:11px;color:var(--muted);">📂 files\library\</div>
+  </div>
+
+  <!-- Found Items -->
+  <div class="app-card">
+    <div class="card-header">
+      <div class="card-icon">🔎</div>
+      <div class="card-title-wrap">
+        <div class="card-title">บันทึกของหายได้คืน</div>
+        <div class="card-subtitle">แจ้ง + ติดตามของหาย</div>
+      </div>
+      <span class="status-badge status-active">ใช้งานอยู่</span>
+    </div>
+    <div class="card-desc">ระบบแจ้งของหาย บันทึก + อัปเดตสถานะเมื่อได้คืน · อัปโหลดรูปได้ 2 ทาง (📷 ถ่ายสด / 🖼️ เลือกไฟล์) · ผู้ส่งมอบเลือกนักเรียน หรือระบุเอง (ครู/บุคคลภายนอก) · มีแมวส้มวิ่ง 🐈 + ติ๊กเกอร์ทำความดีล่าสุด</div>
+    <div class="links-row">
+      <a class="link-chip link-site" href="https://sites.google.com/nonedu2.go.th/found/" target="_blank">
+        <span class="icon">🌐</span> เปิดเว็บ
+      </a>
+      <a class="link-chip link-sheet" href="https://docs.google.com/spreadsheets/d/1ufVIPZnUUuavjoW38mHWg-x5a5pFolL22p4ZcltEsrs/edit" target="_blank">
+        <span class="icon">📊</span> Sheet (บันทึก)
+      </a>
+      <a class="link-chip link-drive" href="https://drive.google.com/drive/folders/18QPht-YUWhmuG2RBQw4NFh77diKPKgoc" target="_blank">
+        <span class="icon">📁</span> Drive (student/item)
+      </a>
+    </div>
+    <div class="files-list">
+      <span class="file-tag html">found.html</span>
+      <span class="file-tag gs">found_code_fixed.gs</span>
+    </div>
+    <div class="conn-row">
+      <span class="conn-label">ความเชื่อมโยง:</span>
+      <span class="conn-tag data-pull">📗 MASTER + 📘 2569 (รายชื่อครู/นักเรียน)</span>
+      <span class="conn-tag data-store">⭐ ป้อน "เก็บของส่งคืน" → ความดี (student_profile)</span>
+    </div>
+    <div style="font-size:11px;color:var(--muted);">📂 files\found\</div>
+  </div>
+
+  <!-- Supervision -->
+  <div class="app-card">
+    <div class="card-header">
+      <div class="card-icon">🔍</div>
+      <div class="card-title-wrap">
+        <div class="card-title">ระบบนิเทศการสอน</div>
+        <div class="card-subtitle">บันทึกสังเกตการสอน</div>
+      </div>
+      <span class="status-badge status-active">ใช้งานอยู่</span>
+    </div>
+    <div class="card-desc">บันทึกการนิเทศ/สังเกตการสอนของครู ติดตามพัฒนาการการสอนในโรงเรียน</div>
+    <div class="links-row">
+      <a class="link-chip link-site" href="https://sites.google.com/view/bangkho360/" target="_blank">
+        <span class="icon">🌐</span> เปิดเว็บ
+      </a>
+      <a class="link-chip link-sheet" href="https://docs.google.com/spreadsheets/d/1gtkBEyr7blZNHzwUjuRm997uEbdGt2ugF2PZYvzNcJ8/edit" target="_blank">
+        <span class="icon">📊</span> เปิด Sheet
+      </a>
+    </div>
+    <div class="files-list">
+      <span class="file-tag html">นิเทศ.html</span>
+      <span class="file-tag gs">ระบบนิเทศ.gs</span>
+    </div>
+    <div class="conn-row">
+      <span class="conn-label">อนาคต:</span>
+      <span class="conn-tag">ควรดึง Teachers จาก MASTER</span>
+    </div>
+    <div style="font-size:11px;color:var(--muted);">📂 files\supervision\</div>
+  </div>
+
+  <!-- Student Council Application -->
+  <div class="app-card">
+    <div class="card-header">
+      <div class="card-icon">📝</div>
+      <div class="card-title-wrap">
+        <div class="card-title">ใบสมัครประธานนักเรียน</div>
+        <div class="card-subtitle">ฟอร์มสมัคร + เก็บข้อมูล</div>
+      </div>
+      <span class="status-badge status-active">ใช้งานอยู่</span>
+    </div>
+    <div class="card-desc">ฟอร์มรับสมัครประธานนักเรียน บันทึกข้อมูลผู้สมัครทั้งหมด ปีการศึกษา 2569</div>
+    <div class="links-row">
+      <span class="link-chip link-local">📂 Downloads\ใบสมัครประธานนักเรียน_รร.ชุมชนวัดบางโค.html</span>
+    </div>
+    <div class="files-list">
+      <span class="file-tag html">ใบสมัครประธานนักเรียน_รร.ชุมชนวัดบางโค.html</span>
+    </div>
+    <div style="font-size:11px;color:var(--muted);">📂 C:\Users\notey\Downloads\</div>
+  </div>
+
+  <!-- Election System -->
+  <div class="app-card">
+    <div class="card-header">
+      <div class="card-icon">🗳️</div>
+      <div class="card-title-wrap">
+        <div class="card-title">ระบบเลือกตั้งประธานนักเรียน 2569</div>
+        <div class="card-subtitle">เช็คสิทธิ์ + Dashboard สถิติ</div>
+      </div>
+      <span class="status-badge status-active">ใช้งานอยู่</span>
+    </div>
+    <div class="card-desc">ระบบตรวจสอบผู้มีสิทธิ์เลือกตั้ง ป.1–ม.3 + ครูบุคลากร + รายชื่อพิเศษ Dashboard realtime แยกรายห้อง/ช่วงชั้น/ภาพรวม วันเลือกตั้ง 5 มิ.ย. 2569</div>
+    <div class="links-row">
+      <a class="link-chip link-site" href="https://sites.google.com/nonedu2.go.th/election/" target="_blank"><span class="icon">🌐</span> เปิดเว็บ</a>
+      <a class="link-chip link-sheet" href="https://docs.google.com/spreadsheets/d/1QvZ6a1D3_QFmimRVirPsqlRVvhIpfcXa__cIorF0zLk/edit" target="_blank"><span class="icon">📊</span> Sheet เลือกตั้ง</a>
+      <a class="link-chip link-drive" href="https://drive.google.com/drive/folders/1cPnq4g_29Gr7SFz2-iJYlY9vmT7qqV2G" target="_blank"><span class="icon">📁</span> Drive Folder</a>
+    </div>
+    <div class="files-list">
+      <span class="file-tag html">election_voter.html</span>
+      <span class="file-tag html">election_dashboard.html</span>
+      <span class="file-tag gs">election_voter.gs</span>
+    </div>
+    <div class="conn-row">
+      <span class="conn-label">ดึงข้อมูลจาก:</span>
+      <span class="conn-tag data-pull">📗 MASTER (Students, Teachers, Classes)</span>
+      <span class="conn-tag data-pull">📘 2569 (Enrollment)</span>
+    </div>
+    <div style="font-size:11px;color:var(--muted);">📂 files\election\ · GAS deployed ✅</div>
+  </div>
+
+  <!-- Student Profile + Home Visit -->
+  <div class="app-card">
+    <div class="card-header">
+      <div class="card-icon">📚</div>
+      <div class="card-title-wrap">
+        <div class="card-title">บันทึกข้อมูลนักเรียนรายบุคคลและเยี่ยมบ้าน</div>
+        <div class="card-subtitle">โปรไฟล์ · สุขภาพ · เยี่ยมบ้าน · ความดี</div>
+      </div>
+      <span class="status-badge status-active">ใช้งานอยู่</span>
+    </div>
+    <div class="card-desc">รู้จักผู้เรียนรายบุคคล 4 แท็บ — <b>โปรไฟล์</b> (รูป+BMI), <b>สุขภาพรายวัน</b> (ผม/เล็บ/ฟัน/แต่งกาย ผ่าน-ไม่ผ่าน ดูราย วัน/สัปดาห์/เดือน), <b>เยี่ยมบ้าน สพฐ.</b> (รูปใน-นอกบ้าน + ลายเซ็น + รายได้บิดามารดา), <b>บันทึกความดี ⭐</b> (มีคะแนนสะสม + ติ๊กเร็วรายวัน + ดึงเก็บของส่งคืนจากระบบของหายอัตโนมัติ) · รูปทุกชนิดใช้ base64 data URL แสดงได้ใน Google Sites · มีแมวส้มวิ่ง 🐈 + ติ๊กเกอร์ความดีล่าสุด</div>
+    <div class="links-row">
+      <a class="link-chip link-sheet" href="https://docs.google.com/spreadsheets/d/1xOdkgx-jJffJn8_1qbVhKZTcCpNlxCkd0bAfADe-3Lg/edit" target="_blank"><span class="icon">📊</span> Sheet นักเรียน (Profiles/HealthCheck/HomeVisit/GoodDeeds)</a>
+      <a class="link-chip link-drive" href="https://drive.google.com/drive/folders/1getbRYGReC9LjWD7DNceDkVwKTpxbpIX" target="_blank"><span class="icon">📁</span> รูปนักเรียน</a>
+      <a class="link-chip link-drive" href="https://drive.google.com/drive/folders/16tdU3JVpG-j_ay1bKodG_Bx8GLAPr1oU" target="_blank"><span class="icon">📁</span> รูปเยี่ยมบ้าน</a>
+    </div>
+    <div class="files-list">
+      <span class="file-tag html">student_profile.html</span>
+      <span class="file-tag gs">student_profile.gs</span>
+    </div>
+    <div class="conn-row">
+      <span class="conn-label">ดึงข้อมูลจาก:</span>
+      <span class="conn-tag data-pull">📗 MASTER (Students, Parents, Teachers, Classes)</span>
+      <span class="conn-tag data-pull">📘 2569 (Enrollment)</span>
+      <span class="conn-tag data-pull">🔎 ของหาย (เก็บของส่งคืน → ความดี)</span>
+    </div>
+    <div style="font-size:11px;color:var(--muted);">📂 files\student_profile\</div>
+  </div>
+
+  <!-- Timetable + Teaching Log -->
+  <div class="app-card">
+    <div class="card-header">
+      <div class="card-icon">📅</div>
+      <div class="card-title-wrap">
+        <div class="card-title">ตารางสอน + บันทึกการเข้าสอน</div>
+        <div class="card-subtitle">มัธยมศึกษา ม.1–ม.3</div>
+      </div>
+      <span class="status-badge status-active">ใช้งานอยู่</span>
+    </div>
+    <div class="card-desc">แสดงตารางสอนรายห้อง/รายครู พร้อม LIVE คาบปัจจุบัน + ระบบบันทึกการเข้าสอนรายวัน 7 สถานะ (สอนปกติ/ลา/ครูแทน/กิจกรรม) สรุปรายเดือน + ปฏิทิน</div>
+    <div class="links-row">
+      <a class="link-chip link-site" href="https://sites.google.com/view/bklive/" target="_blank"><span class="icon">🌐</span> เปิดเว็บ</a>
+      <a class="link-chip link-sheet" href="https://docs.google.com/spreadsheets/d/14ZyWxubxyrpJN3GGN8YE8llP6ynZHHMOHyzrh3v6sng/edit" target="_blank"><span class="icon">📊</span> Schedule</a>
+      <a class="link-chip link-sheet" href="https://docs.google.com/spreadsheets/d/1qff81PoB2ZEPZr-PwyRj8TM0EF72GbLXDuwTiXXBSPI/edit" target="_blank"><span class="icon">📊</span> TeachingLog</a>
+    </div>
+    <div class="files-list">
+      <span class="file-tag html">timetable.html</span>
+      <span class="file-tag html">timetable_log.html</span>
+      <span class="file-tag gs">timetable_log.gs</span>
+    </div>
+    <div class="conn-row">
+      <span class="conn-label">ดึงข้อมูลจาก:</span>
+      <span class="conn-tag data-pull">📋 Schedule + Subjects + Teachers (gviz CSV)</span>
+    </div>
+    <div style="font-size:11px;color:var(--muted);">📂 files\timetable\ · เฉพาะมัธยม (รอข้อมูลประถม)</div>
+  </div>
+
+</div>
+
+<!-- ── SHEETS QUICK REF ── -->
+<div class="section-title">รายการ Google Sheets ทั้งหมด</div>
+<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;" id="sheets-table-wrap">
+  <table class="ref-table">
+    <thead><tr><th>ระบบ</th><th>ชื่อ Sheet</th><th>Sheet ID</th><th>Tabs หลัก</th></tr></thead>
+    <tbody id="sheets-tbody">
+      <tr><td colspan="4" style="text-align:center;color:var(--muted);padding:20px;">⏳ กำลังโหลด...</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ── TODOS ── -->
+<div class="section-title" style="display:flex;justify-content:space-between;align-items:center;">
+  <span>งานค้างที่รู้แล้ว</span>
+  <a href="https://docs.google.com/spreadsheets/d/1DlRZ6Q4H6XrGB4bFLz9fTs8wo9ZSQSvhaubdz7P2980/edit" target="_blank" style="font-size:11px;color:var(--accent2);text-decoration:none;">✏️ แก้ไขใน Sheet</a>
+</div>
+<div class="todo-grid" id="todos-container">
+  <div class="loading-bar">⏳ กำลังโหลดงานค้าง...</div>
+</div>
+
+<!-- ── FOUND ITEMS MANAGEMENT ── -->
+<div class="section-title">จัดการข้อมูล — ของหายได้คืน</div>
+<div class="mgmt-panel">
+
+  <!-- Quick Links -->
+  <div class="links-row">
+    <a class="link-chip link-site" href="https://sites.google.com/nonedu2.go.th/found/" target="_blank"><span class="icon">🌐</span> เปิดเว็บแอป</a>
+    <a class="link-chip link-sheet" href="https://docs.google.com/spreadsheets/d/1DlRZ6Q4H6XrGB4bFLz9fTs8wo9ZSQSvhaubdz7P2980/edit" target="_blank"><span class="icon">📊</span> แก้ไขใน Sheet</a>
+    <a class="link-chip link-drive" href="https://drive.google.com/drive/folders/18QPht-YUWhmuG2RBQw4NFh77diKPKgoc" target="_blank"><span class="icon">📁</span> Drive Folder (student / item)</a>
+  </div>
+
+  <!-- Auth -->
+  <div class="mgmt-auth-row">
+    <input type="text" id="lf-tid" class="mgmt-input" placeholder="Teacher ID (เช่น T001)" />
+    <button class="mgmt-btn" onclick="lfLoad()">🔄 โหลดรายการของหาย</button>
+  </div>
+
+  <!-- Stats -->
+  <div id="lf-stats" style="display:none;" class="lf-stats"></div>
+
+  <!-- Filter -->
+  <div id="lf-filter-bar" style="display:none;" class="filter-tabs">
+    <button class="filter-tab active" onclick="lfSetFilter('all',this)">ทั้งหมด</button>
+    <button class="filter-tab" onclick="lfSetFilter('keeping',this)">🔵 รอเจ้าของ</button>
+    <button class="filter-tab" onclick="lfSetFilter('returned',this)">✅ ได้คืนแล้ว</button>
+  </div>
+
+  <!-- Records -->
+  <div id="lf-container">
+    <div class="lf-msg">ใส่ Teacher ID แล้วกด โหลดรายการ</div>
+  </div>
+
+</div>
+
+<script>
+// ════════════════════════════════════════════════
+//  DASHBOARD DATA ENGINE
+//  แก้ DASH_API ให้ตรงกับ GAS exec URL ของครู
+// ════════════════════════════════════════════════
+const DASH_API = 'https://script.google.com/macros/s/AKfycbxCYo2PchMP09jqu9LkAwUlrvrJuTCy0pvyy6jGrE0ky6qYhdFJ-QVDrv9xqH23MYaJ/exec';
+const LF_API   = DASH_API; // GAS เดียวกัน handle ทั้ง dashboard + found items
+
+// ── LOAD ALL ──────────────────────────────────
+async function loadDashData() {
+  document.getElementById('stat-updated').textContent = '⏳ กำลังโหลด...';
+  try {
+    const r = await fetch(DASH_API + '?action=getAll');
+    const d = await r.json();
+    if (!d.success) { console.error('Dashboard load error:', d.error); return; }
+    renderStats(d.apps, d.todos);
+    renderAppCards(d.apps);
+    renderSheetsTable(d.sheets);
+    renderTodos(d.todos);
+    const tag = document.getElementById('updated-tag');
+    document.getElementById('stat-updated').textContent = '🕐 ' + (d.updated_at || '');
+    if (tag) tag.textContent = 'อัปเดตล่าสุด: ' + (d.updated_at || '');
+  } catch(e) {
+    document.getElementById('stat-updated').textContent = '📄 แสดงข้อมูลสำรอง (offline)';
+    console.error(e);
+    showStaticApps();
+  }
+}
+
+// แสดง static grid สำรอง (เมื่อ API ล่ม/ยังไม่มีข้อมูลใน sheet) — ข้อมูลในนี้อัปเดตด้วยมือให้ตรงเสมอ
+function showStaticApps() {
+  const live = document.getElementById('app-grid');
+  const stat = document.getElementById('static-app-grid');
+  if (live) live.style.display = 'none';
+  if (stat) { stat.style.display = 'grid'; stat.className = 'app-grid'; }
+}
+
+// ── STATS ─────────────────────────────────────
+function renderStats(apps, todos) {
+  const total  = apps.length;
+  const active = apps.filter(a => a.status === 'active').length;
+  const open   = todos.filter(t => t.done !== 'TRUE').length;
+  document.getElementById('stat-total').textContent  = total;
+  document.getElementById('stat-active').textContent = active + ' / ' + total;
+  document.getElementById('stat-todo').textContent   = open;
+}
+
+// ── APP CARDS ─────────────────────────────────
+function renderAppCards(apps) {
+  const grid = document.getElementById('app-grid');
+  const webapps = apps.filter(a => a.category !== 'hub');
+  if (!webapps.length) { showStaticApps(); return; }
+
+  grid.innerHTML = webapps.map(app => {
+    const statusMap = { active:'status-active', pending:'status-pending', checking:'status-wip' };
+    const labelMap  = { active:'ใช้งานอยู่', pending:'ตรวจสอบสถานะ', checking:'กำลังตรวจสอบ' };
+    const sClass = statusMap[app.status] || 'status-pending';
+    const sLabel = labelMap[app.status]  || app.status;
+    const hasIssue = app.warning ? 'has-issue' : '';
+
+    const links = [
+      app.site_url    ? `<a class="link-chip link-site"  href="${esc(app.site_url)}"  target="_blank"><span class="icon">🌐</span> เปิดเว็บ</a>` : '',
+      app.sheet1_url  ? `<a class="link-chip link-sheet" href="${esc(app.sheet1_url)}" target="_blank"><span class="icon">📊</span> ${esc(app.sheet1_name||'Sheet')}</a>` : '',
+      app.sheet2_url  ? `<a class="link-chip link-sheet" href="${esc(app.sheet2_url)}" target="_blank"><span class="icon">📊</span> ${esc(app.sheet2_name||'Sheet 2')}</a>` : '',
+      app.drive_url   ? `<a class="link-chip link-drive" href="${esc(app.drive_url)}"  target="_blank"><span class="icon">📁</span> Drive</a>` : '',
+    ].filter(Boolean).join('');
+
+    const fileTags = (app.files || '').split('|').map(f => f.trim()).filter(Boolean).map(f => {
+      const ext = f.split('.').pop().toLowerCase().replace(/[^a-z]/g,'');
+      return `<span class="file-tag ${ext}">${esc(f)}</span>`;
+    }).join('');
+
+    const issueBox = app.warning
+      ? `<div class="issue-box"><span class="icon">⚠️</span><span>${esc(app.warning)}</span></div>` : '';
+    const folder = app.folder_path
+      ? `<div style="font-size:11px;color:var(--muted);">📂 ${esc(app.folder_path)}</div>` : '';
+
+    return `<div class="app-card ${hasIssue}">
+      <div class="card-header">
+        <div class="card-icon">${app.icon||'🔧'}</div>
+        <div class="card-title-wrap">
+          <div class="card-title">${esc(app.name)}</div>
+          <div class="card-subtitle">${esc(app.subtitle||'')}</div>
+        </div>
+        <span class="status-badge ${sClass}">${sLabel}</span>
+      </div>
+      <div class="card-desc">${esc(app.description||'')}</div>
+      ${links ? `<div class="links-row">${links}</div>` : ''}
+      ${fileTags ? `<div class="files-list">${fileTags}</div>` : ''}
+      ${folder}${issueBox}
+    </div>`;
+  }).join('');
+}
+
+// ── SHEETS TABLE ──────────────────────────────
+function renderSheetsTable(sheets) {
+  const tbody = document.getElementById('sheets-tbody');
+  if (!sheets.length) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--muted);">ไม่พบข้อมูล</td></tr>'; return; }
+  const icons = { database:'🗄️', gpf:'📊', collect:'📋', library:'📚', found:'🔎', supervision:'🔍', student_council:'🗳️' };
+  tbody.innerHTML = sheets.map(s => {
+    const icon = icons[s.app_id] || '📄';
+    const sid  = s.sheet_id || '';
+    const shortId = sid.length > 20 ? sid.slice(0,10)+'...'+sid.slice(-4) : sid;
+    const tabs = (s.tabs||'—').split(',').map(t => t.trim()).map(t => `<span class="tab-pill">${esc(t)}</span>`).join(' ');
+    return `<tr>
+      <td class="app-name">${icon} ${esc(s.app_name||'')}</td>
+      <td><a href="${esc(s.url)}" target="_blank">${esc(s.sheet_name||'')}</a></td>
+      <td class="sheet-id">${shortId}</td>
+      <td>${tabs}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── TODOS ─────────────────────────────────────
+function renderTodos(todos) {
+  const container = document.getElementById('todos-container');
+  const open = todos.filter(t => t.done !== 'TRUE');
+  if (!open.length) { container.innerHTML = '<div class="todo-card"><div style="color:var(--accent2);text-align:center;padding:12px;">✅ ไม่มีงานค้าง!</div></div>'; return; }
+
+  const groups = { high: [], medium: [], low: [] };
+  open.forEach(t => { (groups[t.priority] || groups.low).push(t); });
+
+  const cfg = [
+    { key:'high',   title:'🔴 งานด่วน / High',   cls:'high' },
+    { key:'medium', title:'🟡 งานสำคัญ / Medium', cls:'med'  },
+    { key:'low',    title:'🔵 งานอนาคต / Low',    cls:'low'  },
+  ];
+
+  container.innerHTML = cfg.filter(c => groups[c.key].length).map(c =>
+    `<div class="todo-card">
+      <div class="todo-title"><span>${c.title.split(' ')[0]}</span> ${c.title.split(' ').slice(1).join(' ')}</div>
+      ${groups[c.key].map(t =>
+        `<div class="todo-item ${c.cls}">
+          <div class="dot"></div>
+          <span><b style="color:var(--muted);font-size:11px;">[${esc(t.app_name||t.app_id)}]</b> ${esc(t.text)}</span>
+        </div>`
+      ).join('')}
+    </div>`
+  ).join('');
+}
+
+// ── UTILS ─────────────────────────────────────
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── INIT ──────────────────────────────────────
+document.addEventListener('DOMContentLoaded', loadDashData);
+let _lfAll = [], _lfFilter = 'all';
+
+async function lfLoad() {
+  const tid = (document.getElementById('lf-tid').value || '').trim();
+  if (!tid) { document.getElementById('lf-container').innerHTML = '<div class="lf-msg" style="color:#f59e0b;">⚠️ กรุณาใส่ Teacher ID</div>'; return; }
+  document.getElementById('lf-container').innerHTML = '<div class="lf-msg">⏳ กำลังโหลด...</div>';
+  try {
+    const r = await fetch(LF_API + '?action=getLFRecords&teacher_id=' + encodeURIComponent(tid));
+    const d = await r.json();
+    if (!d.success) { document.getElementById('lf-container').innerHTML = '<div class="lf-msg" style="color:#ef4444;">❌ ' + (d.error || 'เกิดข้อผิดพลาด') + '</div>'; return; }
+    _lfAll = d.records || [];
+    lfShowStats();
+    document.getElementById('lf-filter-bar').style.display = 'flex';
+    lfRender();
+  } catch(e) {
+    document.getElementById('lf-container').innerHTML = '<div class="lf-msg" style="color:#ef4444;">❌ เชื่อมต่อไม่ได้: ' + e.message + '</div>';
+  }
+}
+
+function lfShowStats() {
+  const keeping  = _lfAll.filter(r => r.status === 'keeping').length;
+  const returned = _lfAll.filter(r => r.status === 'returned').length;
+  const s = document.getElementById('lf-stats');
+  s.style.display = 'flex';
+  s.innerHTML = `<div class="lf-stat">ทั้งหมด <b>${_lfAll.length}</b></div>
+    <div class="lf-stat">🔵 รอเจ้าของ <b style="color:#60a5fa;">${keeping}</b></div>
+    <div class="lf-stat">✅ ได้คืนแล้ว <b style="color:#4ade80;">${returned}</b></div>`;
+}
+
+function lfSetFilter(f, btn) {
+  _lfFilter = f;
+  document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  lfRender();
+}
+
+function lfRender() {
+  const rows = _lfFilter === 'all' ? _lfAll : _lfAll.filter(r => r.status === _lfFilter);
+  const c = document.getElementById('lf-container');
+  if (!rows.length) { c.innerHTML = '<div class="lf-msg">ไม่มีรายการ</div>'; return; }
+  c.innerHTML = '<div class="lf-records">' + rows.map(rec => {
+    const itemText = [rec.item_types, rec.item_desc].filter(Boolean).join(' — ');
+    const statusBadge = rec.status === 'keeping'
+      ? `<span class="lf-badge keeping">🔵 รอเจ้าของ</span>`
+      : `<span class="lf-badge returned">✅ ได้คืนแล้ว</span>`;
+    const retSection = rec.status === 'keeping'
+      ? `<div class="ret-form">
+           <input type="text" id="own-${rec.record_id}" class="ret-input" placeholder="ชื่อผู้รับคืน">
+           <button class="ret-btn" onclick="lfReturn('${rec.record_id}')">ส่งคืน ✓</button>
+         </div>`
+      : (rec.owner_name ? `<div class="lf-owner-tag">→ ${rec.owner_name}</div>` : '');
+    return `<div class="lf-record ${rec.status}">
+      <div>
+        <div class="lf-rec-id">${rec.record_id}</div>
+        <div class="lf-rec-name">${rec.student_name || '—'}<span class="lf-rec-cls">${rec.class_name || ''}</span></div>
+        ${itemText ? `<div class="lf-rec-item">${itemText}</div>` : ''}
+        <div class="lf-rec-date">${rec.date || ''} · ${rec.receiver_teacher_name || ''}</div>
+      </div>
+      <div class="lf-status-col">${statusBadge}${retSection}</div>
+    </div>`;
+  }).join('') + '</div>';
+}
+
+async function lfReturn(record_id) {
+  const tid   = (document.getElementById('lf-tid').value || '').trim();
+  const owner = (document.getElementById('own-' + record_id).value || '').trim();
+  const btn   = document.querySelector(`[onclick="lfReturn('${record_id}')"]`);
+  if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+  try {
+    const r = await fetch(LF_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'updateLFStatus', teacher_id: tid, record_id, status: 'returned', owner_name: owner })
+    });
+    const d = await r.json();
+    if (d.success) {
+      const rec = _lfAll.find(x => x.record_id === record_id);
+      if (rec) { rec.status = 'returned'; rec.owner_name = owner; }
+      lfShowStats(); lfRender();
+    } else {
+      if (btn) { btn.disabled = false; btn.textContent = 'ส่งคืน ✓'; }
+      alert('❌ ' + (d.error || 'เกิดข้อผิดพลาด'));
+    }
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = 'ส่งคืน ✓'; }
+    alert('❌ Error: ' + e.message);
+  }
+}
+</script>
+
+<!-- ── FOOTER ── -->
+<div class="footer">
+  Dashboard นี้สร้างด้วย Claude Code · อัปเดต: 6 มิถุนายน 2569 · ข้อมูลสดจากชีตคอนโทรล (GAS)
+  <br>host บน GitHub Pages: <code style="color:var(--muted)">krubk12-collab.github.io/bklive-dashboard</code>
+</div>
+
+</body>
+</html>
